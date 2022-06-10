@@ -1,4 +1,3 @@
-
   // Asset Owner
 
   const inputs = {
