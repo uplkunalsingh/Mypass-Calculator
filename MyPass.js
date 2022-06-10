@@ -277,7 +277,7 @@ const MyPassAdditionalCosts = {
     }
 }
 
-const Final = {
+const FinalDetails = {
     SafetyCosts: {
         selfManaged: selfManagedSafetyCosts.TotalSafetyEventCost(),
         mypass: MyPassSafetyCosts.TotalSafetyEventCost()
@@ -292,4 +292,95 @@ const Final = {
     }
 }
 
-console.log(Final);
+const SummaryFinal = {
+    selfManaged: {
+        safetyCost() {
+            return selfManagedSafetyCosts.TotalAvgCost() * PriceList[input[0]][0]
+        },
+        adminCost() {
+            return selfManagedSCQCosts.TotalAvgCost() * PriceList[input[0]][0] * (38 / 100)   // 38 should be editable
+        },
+        nonComplianceCost() {
+            return -selfManagedSafetyCosts.TotalAvgCost() * (0.01 + (38 - 99) / 100) * PriceList[input[0]][0]   // 38 should be editable
+        },
+        otherCost() {
+            return selfManagedAdditionalCosts.TotalAdditional() * PriceList[input[0]][0]
+        },
+        Total() {
+            return SummaryFinal.selfManaged.safetyCost() +
+                SummaryFinal.selfManaged.adminCost() +
+                SummaryFinal.selfManaged.nonComplianceCost() +
+                SummaryFinal.selfManaged.otherCost()
+        }
+    },
+    mypass: {
+        safetyCost() {
+            return MyPassSafetyCosts.TotalAvgCost() * PriceList[input[0]][0]
+        },
+        adminCost() {
+            return MyPassSCQCosts.TotalAvgCost() * PriceList[input[0]][0]
+        },
+        otherCost() {
+            return MyPassAdditionalCosts.TotalCost() * PriceList[input[0]][0]
+        },
+        Total() {
+            return SummaryFinal.mypass.safetyCost() +
+                SummaryFinal.mypass.adminCost() +
+                SummaryFinal.mypass.otherCost()
+        }
+    },
+    savings: {
+        safetyCost() {
+            return SummaryFinal.selfManaged.safetyCost() - SummaryFinal.mypass.safetyCost()
+        },
+        adminCost() {
+            return SummaryFinal.selfManaged.adminCost() - SummaryFinal.mypass.adminCost()
+        },
+        otherCost() {
+            return SummaryFinal.selfManaged.otherCost()
+        },
+        Total() {
+            return SummaryFinal.selfManaged.Total() - SummaryFinal.mypass.Total()
+        }
+    }
+}
+
+const YearViceCost = {
+    selfManaged: {
+        year1() {
+            return SummaryFinal.selfManaged.Total()
+        },
+        year2() {
+            return SummaryFinal.selfManaged.Total()
+        },
+        year3() {
+            return SummaryFinal.selfManaged.Total()
+        }
+    },
+    mypass: {
+        year1() {
+            return SummaryFinal.mypass.Total()
+        },
+        year2() {
+            return SummaryFinal.mypass.Total() + (-MyPassAdditionalCosts.implementationFee() - MyPassAdditionalCosts.qualificationFee() * 4 / 10) * PriceList[input[0]][0]
+        },
+        year3() {
+            return YearViceCost.mypass.year2()
+        }
+    },
+    savings: {
+        year1() {
+            return YearViceCost.selfManaged.year1() - YearViceCost.mypass.year1()
+        },
+        year2() {
+            return YearViceCost.selfManaged.year2() - YearViceCost.mypass.year2()
+        },
+        year3() {
+            return YearViceCost.selfManaged.year3() - YearViceCost.mypass.year3()
+        }
+    }
+}
+
+const EstimatedCostSavings = PriceList[input[0]][1] + ' ' + (Math.ceil(YearViceCost.savings.year1() + YearViceCost.savings.year2() + YearViceCost.savings.year3())).toLocaleString('en')
+
+document.querySelector("#estimatedCostSaving").innerHTML = EstimatedCostSavings
